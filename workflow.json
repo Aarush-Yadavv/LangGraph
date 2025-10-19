@@ -1,0 +1,224 @@
+{
+  "workflow_name": "OutboundLeadGeneration",
+  "description": "End-to-end AI agent workflow to find, contact, and qualify leads",
+  "config": {
+    "scoring": {
+      "weights": {
+        "revenue_match": 0.3,
+        "employee_match": 0.2,
+        "technology_match": 0.2,
+        "signal_strength": 0.3
+      },
+      "thresholds": {
+        "min_score": 60
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "prospect_search",
+      "agent": "ProspectSearchAgent",
+      "inputs": {
+        "icp": {
+          "industry": ["SaaS", "Technology", "Software"],
+          "location": "USA",
+          "employee_count": {
+            "min": 100,
+            "max": 1000
+          },
+          "revenue": {
+            "min": 20000000,
+            "max": 200000000
+          }
+        },
+        "signals": ["recent_funding", "hiring_for_sales", "expansion"],
+        "limit": 10
+      },
+      "instructions": "Use Apollo API to search for company and contact data matching ICP. Focus on decision-makers (VP, Director, Head of Sales/Marketing). Return structured leads with company and contact information.",
+      "tools": [
+        {
+          "name": "ApolloAPI",
+          "config": {
+            "api_key": "{{APOLLO_API_KEY}}",
+            "endpoint": "https://api.apollo.io/v1/mixed_people/search"
+          }
+        }
+      ],
+      "output_schema": {
+        "leads": [
+          {
+            "company": "string",
+            "contact_name": "string",
+            "email": "string",
+            "title": "string",
+            "linkedin": "string",
+            "company_size": "number",
+            "signal": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "enrichment",
+      "agent": "DataEnrichmentAgent",
+      "inputs": {
+        "leads": "{{prospect_search.output.leads}}"
+      },
+      "instructions": "Enrich lead data with additional company information, technologies used, and recent news. Use Clearbit API for enrichment. If API is unavailable, use mock enrichment data.",
+      "tools": [
+        {
+          "name": "Clearbit",
+          "config": {
+            "api_key": "{{CLEARBIT_API_KEY}}"
+          }
+        }
+      ],
+      "output_schema": {
+        "enriched_leads": [
+          {
+            "company": "string",
+            "contact": "string",
+            "email": "string",
+            "role": "string",
+            "technologies": "array",
+            "company_description": "string",
+            "recent_news": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "scoring",
+      "agent": "ScoringAgent",
+      "inputs": {
+        "enriched_leads": "{{enrichment.output.enriched_leads}}",
+        "scoring_criteria": "{{config.scoring}}"
+      },
+      "instructions": "Score leads based on ICP match criteria. Consider revenue range, employee count, technology stack, and buying signals. Rank leads from highest to lowest score. Only keep leads with score >= min_score threshold.",
+      "tools": [],
+      "output_schema": {
+        "ranked_leads": [
+          {
+            "company": "string",
+            "contact": "string",
+            "email": "string",
+            "score": "number",
+            "score_breakdown": "object"
+          }
+        ]
+      }
+    },
+    {
+      "id": "outreach_content",
+      "agent": "OutreachContentAgent",
+      "inputs": {
+        "ranked_leads": "{{scoring.output.ranked_leads}}",
+        "persona": "SDR",
+        "tone": "friendly and professional"
+      },
+      "instructions": "Generate personalized outreach email messages for each lead. Use GPT-4o-mini to create compelling, relevant content based on prospect's company, role, and signals. Include a clear call-to-action. Keep emails concise (under 150 words).",
+      "tools": [
+        {
+          "name": "OpenAI",
+          "config": {
+            "api_key": "{{OPENAI_API_KEY}}",
+            "model": "gpt-4o-mini"
+          }
+        }
+      ],
+      "output_schema": {
+        "messages": [
+          {
+            "lead": "string",
+            "email": "string",
+            "subject": "string",
+            "email_body": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "send",
+      "agent": "OutreachExecutorAgent",
+      "inputs": {
+        "messages": "{{outreach_content.output.messages}}",
+        "dry_run": true
+      },
+      "instructions": "Send emails using SendGrid API. Log each send attempt with timestamp and status. In dry_run mode, simulate sending without actually sending emails. Return campaign ID and sent status for each email.",
+      "tools": [
+        {
+          "name": "SendGrid",
+          "config": {
+            "api_key": "{{SENDGRID_API_KEY}}",
+            "from_email": "{{FROM_EMAIL}}",
+            "from_name": "{{FROM_NAME}}"
+          }
+        }
+      ],
+      "output_schema": {
+        "campaign_id": "string",
+        "sent_status": [
+          {
+            "email": "string",
+            "status": "string",
+            "timestamp": "string"
+          }
+        ]
+      }
+    },
+    {
+      "id": "response_tracking",
+      "agent": "ResponseTrackerAgent",
+      "inputs": {
+        "campaign_id": "{{send.output.campaign_id}}",
+        "sent_status": "{{send.output.sent_status}}"
+      },
+      "instructions": "Monitor email engagement metrics including opens, clicks, and replies. In this demo, simulate response tracking data. Return metrics for analysis.",
+      "tools": [],
+      "output_schema": {
+        "responses": [
+          {
+            "email": "string",
+            "opened": "boolean",
+            "clicked": "boolean",
+            "replied": "boolean",
+            "meeting_booked": "boolean"
+          }
+        ]
+      }
+    },
+    {
+      "id": "feedback_trainer",
+      "agent": "FeedbackTrainerAgent",
+      "inputs": {
+        "responses": "{{response_tracking.output.responses}}",
+        "messages": "{{outreach_content.output.messages}}",
+        "scored_leads": "{{scoring.output.ranked_leads}}"
+      },
+      "instructions": "Analyze campaign performance metrics (open rate, reply rate, conversion rate). Identify patterns in successful vs unsuccessful outreach. Generate actionable recommendations for improving ICP targeting, messaging, or timing. Write recommendations to Google Sheets for human review.",
+      "tools": [
+        {
+          "name": "GoogleSheets",
+          "config": {
+            "sheet_id": "{{GOOGLE_SHEET_ID}}"
+          }
+        }
+      ],
+      "output_schema": {
+        "metrics": {
+          "open_rate": "number",
+          "click_rate": "number",
+          "reply_rate": "number",
+          "meeting_rate": "number"
+        },
+        "recommendations": [
+          {
+            "category": "string",
+            "suggestion": "string",
+            "confidence": "string"
+          }
+        ]
+      }
+    }
+  ]
+}
