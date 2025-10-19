@@ -30,7 +30,7 @@ class OutreachExecutorAgent(BaseAgent):
         self.think(f"Preparing to send {len(messages)} emails")
         
         if dry_run:
-            self.observe("⚠️  DRY RUN MODE - No emails will actually be sent")
+            self.observe("[WARNING] DRY RUN MODE - No emails will actually be sent")
         
         campaign_id = f"campaign_{uuid.uuid4().hex[:8]}_{datetime.now().strftime('%Y%m%d')}"
         

@@ -216,15 +216,15 @@ class FeedbackTrainerAgent(BaseAgent):
         with open(filename, 'w') as f:
             json.dump(feedback_data, f, indent=2)
         
-        self.observe(f"✅ Feedback saved to {filename}")
+        self.observe(f"[+] Feedback saved to {filename}")
         
         # Also print recommendations to console
         print("\n" + "="*60)
-        print("📊 CAMPAIGN RECOMMENDATIONS")
+        print("[RECOMMENDATIONS] CAMPAIGN ANALYSIS")
         print("="*60)
         for rec in recommendations:
-            print(f"\n🎯 {rec['category']}")
-            print(f"   {rec['suggestion']}")
-            print(f"   Current: {rec['current_value']} → Target: {rec['target_value']}")
-            print(f"   Confidence: {rec['confidence']}")
+            print(f"\n[{rec['category'].upper()}]")
+            print(f"  {rec['suggestion']}")
+            print(f"  Current: {rec['current_value']} -> Target: {rec['target_value']}")
+            print(f"  Confidence: {rec['confidence']}")
         print("="*60 + "\n")

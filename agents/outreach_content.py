@@ -49,6 +49,9 @@ class OutreachContentAgent(BaseAgent):
         
         self.observe(f"Successfully generated {len(messages)} personalized emails")
         
+        # Save emails to file for review
+        self._save_emails_to_file(messages)
+        
         output = {'messages': messages}
         self.validate_output(output)
         

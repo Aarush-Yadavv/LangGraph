@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 LangGraph Builder - Main orchestrator for Prospect-to-Lead Workflow
 Dynamically builds and executes workflow from workflow.json
@@ -54,7 +53,7 @@ class LangGraphWorkflowBuilder:
         self.graph = None
         
         self.logger.info("="*60)
-        self.logger.info("🚀 LangGraph Workflow Builder Initialized")
+        self.logger.info("LangGraph Workflow Builder Initialized")
         self.logger.info("="*60)
     
     def load_workflow(self) -> Dict[str, Any]:

@@ -30,7 +30,7 @@ class BaseAgent(ABC):
     def think(self, thought: str):
         """Record a reasoning thought (ReAct pattern)"""
         self.thoughts.append(thought)
-        print(f"💭 Thought: {thought}")
+        print(f"[THINK] {thought}")
     
     def act(self, action: str, details: Dict[str, Any] = None):
         """Record an action taken (ReAct pattern)"""
@@ -40,12 +40,12 @@ class BaseAgent(ABC):
             'timestamp': datetime.now().isoformat()
         }
         self.actions.append(action_record)
-        print(f"🎬 Action: {action}")
+        print(f"[ACT] {action}")
     
     def observe(self, observation: str):
         """Record an observation from action results (ReAct pattern)"""
         self.observations.append(observation)
-        print(f"👁️  Observation: {observation}")
+        print(f"[OBSERVE] {observation}")
     
     @abstractmethod
     def execute(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
